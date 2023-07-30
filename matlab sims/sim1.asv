@@ -1,0 +1,10 @@
+N = 200;
+v = -9/15;
+p = N^v;
+G = ER(N, p); % N*p is the desired average degree of the graph (aas?)
+
+F = LPA(G, N, 10);
+
+[N_arr, v_arr] = meshgrid(5:20, -1:0.1:-0.1);
+[~, iters, ~] = LPA(ER(N_arr, N.^, N_arr, N.^v_arr);
+surf(N_arr, v_arr, iters)

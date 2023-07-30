@@ -1,0 +1,12 @@
+% find value of v for which around 50% of trials converge to one value
+% starting with N = 1e4 and doubling until we get to around N = 6.4e5
+
+N_arr = zeros(1, 6);
+v_arr = zeros(1, 6);
+
+N = 10^4;
+for i = 1:6
+    v = BinSearchV(1000, 0.01);
+    fprintf("for N = %f, v is around %f\n", N, v);
+    N = N * 2;
+end

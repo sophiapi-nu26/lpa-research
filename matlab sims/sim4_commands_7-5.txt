@@ -1,0 +1,80 @@
+>> sim4
+current N = 3125
+v = -1.000000, percentConverged = 0.000000, currentHalf = 0.500000
+v = -0.500000, percentConverged = 1.000000, currentHalf = 0.250000
+v = -0.750000, percentConverged = 0.062500, currentHalf = 0.125000
+v = -0.625000, percentConverged = 1.000000, currentHalf = 0.062500
+v = -0.687500, percentConverged = 0.906250, currentHalf = 0.031250
+v = -0.718750, percentConverged = 0.875000, currentHalf = 0.015625
+v = -0.734375, percentConverged = 0.281250, currentHalf = 0.007812
+v = -0.726562, percentConverged = 0.531250, currentHalf = 0.003906
+v = -0.730469, percentConverged = 0.500000, currentHalf = 0.001953
+for N = 3125.000000, v is around -0.730469
+current N = 6250
+v = -1.000000, percentConverged = 0.000000, currentHalf = 0.500000
+v = -0.500000, percentConverged = 1.000000, currentHalf = 0.250000
+v = -0.750000, percentConverged = 0.281250, currentHalf = 0.125000
+v = -0.625000, percentConverged = 1.000000, currentHalf = 0.062500
+v = -0.687500, percentConverged = 1.000000, currentHalf = 0.031250
+v = -0.718750, percentConverged = 1.000000, currentHalf = 0.015625
+v = -0.734375, percentConverged = 0.718750, currentHalf = 0.007812
+v = -0.742188, percentConverged = 0.500000, currentHalf = 0.003906
+for N = 6250.000000, v is around -0.742188
+current N = 12500
+v = -1.000000, percentConverged = 0.000000, currentHalf = 0.500000
+v = -0.500000, percentConverged = 1.000000, currentHalf = 0.250000
+v = -0.750000, percentConverged = 0.687500, currentHalf = 0.125000
+v = -0.875000, percentConverged = 0.000000, currentHalf = 0.062500
+v = -0.812500, percentConverged = 0.000000, currentHalf = 0.031250
+v = -0.781250, percentConverged = 0.000000, currentHalf = 0.015625
+v = -0.765625, percentConverged = 0.156250, currentHalf = 0.007812
+v = -0.757812, percentConverged = 0.375000, currentHalf = 0.003906
+v = -0.753906, percentConverged = 0.531250, currentHalf = 0.001953
+v = -0.755859, percentConverged = 0.562500, currentHalf = 0.000977
+v = -0.756836, percentConverged = 0.468750, currentHalf = 0.000488
+v = -0.756348, percentConverged = 0.281250, currentHalf = 0.000244
+v = -0.756104, percentConverged = 0.562500, currentHalf = 0.000122
+v = -0.756226, percentConverged = 0.406250, currentHalf = 0.000061
+v = -0.756165, percentConverged = 0.312500, currentHalf = 0.000031
+v = -0.756134, percentConverged = 0.500000, currentHalf = 0.000015
+for N = 12500.000000, v is around -0.756134
+current N = 25000
+v = -1.000000, percentConverged = 0.000000, currentHalf = 0.500000
+v = -0.500000, percentConverged = 1.000000, currentHalf = 0.250000
+v = -0.750000, percentConverged = 0.843750, currentHalf = 0.125000
+v = -0.875000, percentConverged = 0.000000, currentHalf = 0.062500
+v = -0.812500, percentConverged = 0.000000, currentHalf = 0.031250
+v = -0.781250, percentConverged = 0.000000, currentHalf = 0.015625
+v = -0.765625, percentConverged = 0.343750, currentHalf = 0.007812
+v = -0.757812, percentConverged = 0.718750, currentHalf = 0.003906
+v = -0.761719, percentConverged = 0.500000, currentHalf = 0.001953
+for N = 25000.000000, v is around -0.761719
+current N = 50000
+v = -1.000000, percentConverged = 0.000000, currentHalf = 0.500000
+v = -0.500000, percentConverged = 1.000000, currentHalf = 0.250000
+v = -0.750000, percentConverged = 0.968750, currentHalf = 0.125000
+v = -0.875000, percentConverged = 0.000000, currentHalf = 0.062500
+v = -0.812500, percentConverged = 0.000000, currentHalf = 0.031250
+Out of memory.
+
+Error in graph (line 293)
+                    G.EdgeProperties = nonzeros(tril(A));
+
+Error in ER (line 22)
+G = graph(A, 'omitselfloops');
+
+Error in MinLPA (line 17)
+G = ER(N, N.^v);
+
+Error in findLabels (line 3)
+        [F, iteration, ~] = MinLPA(N, v, 100); % set high cap to allow for convergence
+
+Error in BinSearchV (line 29)
+        result = findLabels(type, N, v);
+
+Error in sim4 (line 13)
+    v_arr(i) = BinSearchV(type, N_arr(i), 0.01);
+
+Related documentation
+ 
+>> 

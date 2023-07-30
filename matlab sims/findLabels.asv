@@ -1,0 +1,13 @@
+function [labelFrequencies] = findLabels(type, N, v)
+    if type == 'MinLPA'
+        [F, iteration, ~] = MinLPA(N, v, 100); % set high cap to allow for convergence
+    end
+else 
+    [F, iteration, ~] = RandLPA(N, v, 100); % set high cap to allow for convergence
+    labelVector = F(:, iteration);
+    [frequencies, labels] = groupcounts(labelVector);
+    labelFrequencies = zeros(N, 1);
+    for i = 1:numel(labels)
+        labelFrequencies(labels(i)) = frequencies(i);
+    end
+end
