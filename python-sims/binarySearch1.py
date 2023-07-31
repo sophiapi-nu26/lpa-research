@@ -1,4 +1,5 @@
 from lpafunctions import *
+import numpy as np
 
 # test = [[0, 3]
 #         [1, 2]
@@ -11,7 +12,9 @@ from lpafunctions import *
 
 
 
-N_values = [100]
+N_values = np.zeros(11)
+for i in range(np.size(N_values)):
+    N_values[i] = 10000 * np.power(2, i)
 print("hello")
 estThresholdDegrees, estThresholdVs = ER_BinSearchThreshold_v(32, N_values)
 print(estThresholdDegrees)
