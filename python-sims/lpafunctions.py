@@ -164,6 +164,8 @@ def ER_BinSearchThreshold_v(numTrials, testNValues, cap=100):
     curr_step = 0.5
     # counter to hold the number of trials that reached consensus
     numConsensus = 0
+    # keep track of proportion of trials reaching consensus
+    proportionCons = 0
     # loop through all values of N
     for i in range(np.size(testNValues)):
         N = testNValues[i]
@@ -172,7 +174,7 @@ def ER_BinSearchThreshold_v(numTrials, testNValues, cap=100):
         while (np.abs(numConsensus - numTrials/2) >= 0.5):
             print("curr_v = ", curr_v)
             # if less than half of the trials reached consensus, increase the value of v
-            if numConsensus < numTrials/2:
+            if proportionCons < 0.5:
                 curr_v += curr_step
             # if more than half of the trials reached consensus, decrease the value of v
             else:
@@ -182,6 +184,8 @@ def ER_BinSearchThreshold_v(numTrials, testNValues, cap=100):
             print("curr_v = ", curr_v)
             # reset the number of trials that reached consensus to 0
             numConsensus = 0
+            # reset the proportion of trials reaching consensus
+            proportionCons = 0
             # run trials
             for trial in range(numTrials):
                 G = ER(N, np.power(N, curr_v))
@@ -189,7 +193,16 @@ def ER_BinSearchThreshold_v(numTrials, testNValues, cap=100):
                 # if reached consensus (i.e. only one surviving label), increment numConsensus
                 if np.size(SurvivingLabels(history[:,-1])) == 1:
                     numConsensus += 1
+                proportionCons = numConsensus / (trial + 1)
+                print("trial = ", trial)
+                print("proportionCons = ", proportionCons)
+                # if at any point after the first quarter of the trials the proportion of consensus-reaching trials is <= 0.2 or => 0.8, terimnate
+                if trial >= numTrials/4:
+                    if proportionCons <= 0.2 or proportionCons >= 0.8:
+                        #print("numConsensus/trials = ", numConsensus/(trial+1))
+                        break
             print("numConsensus = ", numConsensus)
+            print("proportionCons = ", proportionCons)
         print("final curr_v = ", curr_v)
         estThresholdDegrees[i] = N * np.power(N, curr_v)
         estThresholdVs[i] = curr_v
