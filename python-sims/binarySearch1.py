@@ -17,7 +17,7 @@ for i in range(np.size(N_values)):
     N_values[i] = (10000 * int(np.power(2, i)))
 N_values = N_values.astype(np.int64)
 
-N_values = [1000]
+#N_values = [1000]
 print("hello")
 estThresholdDegrees, estThresholdVs = ER_BinSearchThreshold_v(32, N_values)
 print(estThresholdDegrees)
