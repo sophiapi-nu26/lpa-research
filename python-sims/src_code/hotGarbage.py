@@ -18,3 +18,8 @@ selected_mode = np.random.choice(modes)
 
 print("Modes:", modes)
 print("Selected Mode:", selected_mode)
+
+
+filter_data = (data < 3)
+print(filter_data)
+print(np.multiply(data, filter_data))

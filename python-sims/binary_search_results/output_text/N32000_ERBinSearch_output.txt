@@ -1,0 +1,68 @@
+N = 32000
+curr_v = -1.000000
+curr_v -0.500000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_v = -0.500000
+curr_v -0.750000
+trials run = 9
+numConsensus = 0
+proportionCons = 0.000000
+curr_v = -0.750000
+curr_v -0.625000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_v = -0.625000
+curr_v -0.687500
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_v = -0.687500
+curr_v -0.718750
+numConsensus = 14
+proportionCons = 0.437500
+curr_v = -0.718750
+curr_v -0.703125
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_v = -0.703125
+curr_v -0.710938
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_v = -0.710938
+curr_v -0.714844
+numConsensus = 25
+proportionCons = 0.781250
+curr_v = -0.714844
+curr_v -0.716797
+numConsensus = 12
+proportionCons = 0.375000
+curr_v = -0.716797
+curr_v -0.715820
+trials run = 10
+numConsensus = 8
+proportionCons = 0.800000
+curr_v = -0.715820
+curr_v -0.716309
+numConsensus = 17
+proportionCons = 0.531250
+curr_v = -0.716309
+curr_v -0.716553
+numConsensus = 18
+proportionCons = 0.562500
+curr_v = -0.716553
+curr_v -0.716675
+numConsensus = 17
+proportionCons = 0.531250
+curr_v = -0.716675
+curr_v -0.716736
+numConsensus = 18
+proportionCons = 0.562500
+estThresholdDegree = 18.886328
+estThresholdV = -0.716736
+v_arr:[-1.0, -0.5, -0.75, -0.625, -0.6875, -0.71875, -0.703125, -0.7109375, -0.71484375, -0.716796875, -0.7158203125, -0.71630859375, -0.716552734375, -0.7166748046875, -0.71673583984375]
+length of v_arr = 15

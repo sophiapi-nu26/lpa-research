@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import array
 import networkx as nx
 import matplotlib.pyplot as plt
 from scipy import stats as st
@@ -47,10 +48,12 @@ Outputs:
 """
 def SBM_default(N, numCommunities, p, q):
     remainder = N % numCommunities
-    sizes = np.ones(numCommunities) * (N / numCommunities)
+    sizes = np.ones(numCommunities) * (N // numCommunities)
     for i in range(remainder):
         ind = np.random.randint(numCommunities)
         sizes[ind] = sizes[ind] + 1
+    sizes = array(sizes)
+    sizes = sizes.astype('i')
     probs = np.ones((numCommunities, numCommunities)) * q
     np.fill_diagonal(probs, np.ones(numCommunities) * p)
     return nx.stochastic_block_model(sizes, probs)
@@ -251,7 +254,157 @@ def plotV(N, v_arr):
 
 
 
-# generatePQHeatmap()
+# generatePQHeatmap(N, size, numTrials)
+"""
+Generates heatmap of number of surviving labels for the stochastic block model with parameters p = N^a, q = N^b, where a, b between -1 and 0
+Regenerates random graph (and random communities) each time
+Inputs:
+    N = number of nodes to build graphs with
+    size = number of p, q values each
+    numTrials = (optional) number of trials for each (p, q) pair, defaults to 8
+Outputs:
+    2D array numLabels_data where heatmapData[j][i] is the average number of surviving labels for p = N^(-i/(size-1)), q = N^(-j/(size-1))
+    2D array largestNonzeroLabel_data where heatmapData[j][i] is the average largest surviving label for p = N^(-i/(size-1)), q = N^(-j/(size-1))
+"""
+def generatePQHeatmap(N, numCommunities, size, numTrials):
+    # initialize 2D array
+    numLabels_data = np.zeros((size, size))
+    maxNonzeroLabel_data = np.zeros((size, size))
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+    for j in range(size):
+        for i in range(size):
+            numLabels_sum = 0
+            maxNonzero_sum = 0
+            for trial in range(numTrials):
+                p = 1/np.power(N, np.abs(a_arr[i]))
+                q = 1/np.power(N, np.abs(b_arr[j]))
+                G = SBM_default(N, numCommunities, p, q)
+                history, iteration = MinRandLPA(G)
+                surviving = SurvivingLabels(history[:,-1])
+                numLabels_sum += np.size(surviving)
+                maxNonzero_sum += np.max(surviving)
+            numLabels_data[j][i] = numLabels_sum / numTrials
+            maxNonzeroLabel_data[j][i] = maxNonzero_sum / numTrials
+    plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data)
+    plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzeroLabel_data)
+    # filter out values greater than numCommunities; replace with -1
+    filtered_numLabels_data = numLabels_data
+    filtered_numLabels_data = np.multiply(filtered_numLabels_data, (filtered_numLabels_data <= numCommunities))
+    plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, filtered_numLabels_data)
+    return numLabels_data, maxNonzeroLabel_data
+
+
+
+# plotNumLabelsHeatmap(N, numCommmunities, numTrials, numLabels_data)
+"""
+Plots and saves heatmap of number avg # of surviving labels
+"""
+def plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data):
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(numLabels_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, numLabels_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("Average # of Surviving Labels on SBM where \nN = %d on %d Communities Over %d Trials" % (N, numCommunities, numTrials))
+    ax.set_xlabel('a where p = N^a')
+    ax.set_ylabel('b where q = N^b')
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('numLabels_heatmap_N%d_%dcomm_%dtrials' % (N, numCommunities, numTrials))
+    plt.clf()
+
+
+
+# plotMaxNonzeroHeatmap(N, numCommmunities, numTrials, maxNonzero_data)
+"""
+Plots and saves heatmap of average maximum surviving label
+"""
+def plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzero_data):
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(maxNonzero_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, maxNonzero_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("Average Max Surviving Label on SBM where \nN = %d on %d Communities with %d Trials" % (N, numCommunities, numTrials))
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('maxSurviving_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
+    plt.clf()
+
+
+
+# plotFiltNumLabelsHeatmap(N, numCommmunities, numTrials, numLabels_data)
+"""
+Plots and saves heatmap of number avg # of surviving labels, filtered outfor the values that are 
+"""
+def plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data):
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(numLabels_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, fontsize = 5)#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, fontsize = 5)#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, numLabels_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("Average # of Surviving Labels (Filtered) on SBM where \nN = %d on %d Communities Over %d Trials" % (N, numCommunities, numTrials))
+    ax.set_xlabel('a where p = N^a')
+    ax.set_ylabel('b where q = N^b')
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('numLabelsFilt_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
+    plt.clf()
 
 
 
