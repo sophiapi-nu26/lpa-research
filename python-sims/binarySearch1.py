@@ -15,10 +15,10 @@ from sklearn.linear_model import LinearRegression
 
 N_values = np.zeros(11)
 for i in range(np.size(N_values)):
-    N_values[i] = (10000 * int(np.power(2, i)))
+    N_values[i] = (1000 * int(np.power(2, i)))
 N_values = N_values.astype(np.int64)
 
-N_values = [100, 200, 300, 400]
+# N_values = [100, 200, 300, 400]
 print("hello")
 estThresholdDegrees, estThresholdVs = ER_BinSearchThreshold_v(32, N_values)
 print("estThresholdDegrees:")
