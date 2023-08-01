@@ -61,13 +61,13 @@ def SBM_default(N, numCommunities, p, q):
 """
 Inputs:
     G = graph
-    cap = (optional) max number of iterations allowed before termination of algorithm, 100 by default
+    cap = (optional) max number of iterations allowed before termination of algorithm, 20 by default
 
 Outputs:
     history = N by (iteration + 1) matrix with the state history of the simulation
     iteration = Last completed iteration
 """
-def MinRandLPA(G, cap=100):
+def MinRandLPA(G, cap=20):
     N = nx.number_of_nodes(G)
     # initialize history; 0th column is initial labels 1 through N
     history = np.reshape(list(nx.nodes(G)), (-1, 1)) # reshape [1:N] to column shape
@@ -141,47 +141,55 @@ def LabelDist(finalLabels):
 
 # ER_BinSearchThreshold_v(numTrials, testNValues)
 """
-Conducts binary search for threshold value of LPA convergence (following procedure in Pfeister thesis) on v wher p = N^v
+Conducts binary search for threshold value of LPA convergence (following procedure in Pfeister thesis) on v wher p = N^v. 
+To avoid excessively long output, the algorithm terminates once v is precise to +/- 1/N
 Inputs:
     numTrials = number of independent trials run each time we calculate the proportion of trials that reached consensus
         defaults to 32, as in Pfeister thesis
     testNValues = array of values of N for which a threshold value will be estimated
         defaults to an array indexed 0 through 10 (length 11), where testNValues[i] = 1e5*(2^i)
     cap = (optional) max number of iterations allowed (per trial) (i.e. if a trial does not reach consensus after [cap] iterations,
-        we consider it not in consensus, even if it would have reached consensus after more iterations), 100 by default
+        we consider it not in consensus, even if it would have reached consensus after more iterations), 20 by default
+    
 Outputs:
     array estThresholdDegrees where estThresholds[i] is the estimated threshold degree value (note this is Np, not p)
     array estThresholdVs where estThresholdVs is the estimated threshold v value (p = N^v)
 """
-def ER_BinSearchThreshold_v(numTrials, testNValues, cap=100):
+def ER_BinSearchThreshold_v(numTrials, testNValues, cap=20):
     # array to hold the estimated values of np for each value of N
     estThresholdDegrees = np.zeros(np.size(testNValues))
     # array to hold the estimated values of v for each value of N
     estThresholdVs = np.zeros(np.size(testNValues))
-    # initialize value of v to be -1
-    curr_v = -1.0
-    # initialize current step size to 0.5
-    curr_step = 0.5
-    # counter to hold the number of trials that reached consensus
-    numConsensus = 0
-    # keep track of proportion of trials reaching consensus
-    proportionCons = 0
     # loop through all values of N
     for i in range(np.size(testNValues)):
         N = testNValues[i]
-        print("N = ", N)
-        # run binary search until half of the trials reach consensus
-        while (np.abs(numConsensus - numTrials/2) >= 0.5):
-            print("curr_v = ", curr_v)
+        # initialize value of v to be -1
+        curr_v = -1.0
+        # initialize current step size to 0.5
+        curr_step = 0.5
+        # counter to hold the number of trials that reached consensus
+        numConsensus = 0
+        # keep track of proportion of trials reaching consensus
+        proportionCons = 0
+        # create file object to write to
+        file_object = open('N%d_ERBinSearch_output.txt' % N, 'w')
+        file_object.write("N = %d\n" % N)
+        # keep track of all the values of v
+        v_arr = [curr_v]
+        # run binary search until half of the trials reach consensus or curr_step is within 1/N
+        while (np.abs(numConsensus - numTrials/2) >= 0.5 and curr_step > 1/N):
+            file_object.write("curr_v = %f\n" % curr_v)
             # if less than half of the trials reached consensus, increase the value of v
             if proportionCons < 0.5:
                 curr_v += curr_step
+                v_arr.append(curr_v)
             # if more than half of the trials reached consensus, decrease the value of v
             else:
                 curr_v -= curr_step
+                v_arr.append(curr_v)
             # halve step size
             curr_step /= 2
-            print("curr_v = ", curr_v)
+            file_object.write("curr_v %f\n" % curr_v)
             # reset the number of trials that reached consensus to 0
             numConsensus = 0
             # reset the proportion of trials reaching consensus
@@ -194,19 +202,56 @@ def ER_BinSearchThreshold_v(numTrials, testNValues, cap=100):
                 if np.size(SurvivingLabels(history[:,-1])) == 1:
                     numConsensus += 1
                 proportionCons = numConsensus / (trial + 1)
-                print("trial = ", trial)
-                print("proportionCons = ", proportionCons)
+                #file_object.write("trial = %d\n" % trial)
+                #file_object.write("proportionCons = %f\n" % proportionCons)
                 # if at any point after the first quarter of the trials the proportion of consensus-reaching trials is <= 0.2 or => 0.8, terimnate
                 if trial >= numTrials/4:
                     if proportionCons <= 0.2 or proportionCons >= 0.8:
-                        #print("numConsensus/trials = ", numConsensus/(trial+1))
+                        #file_object.write("numConsensus/trials = ", numConsensus/(trial+1))
+                        file_object.write("trials run = %d\n" % (trial+1))
                         break
-            print("numConsensus = ", numConsensus)
-            print("proportionCons = ", proportionCons)
-        print("final curr_v = ", curr_v)
+            file_object.write("numConsensus = %d\n" % numConsensus)
+            file_object.write("proportionCons = %f\n" % proportionCons)
+        #file_object.write("final curr_v = %f" % curr_v)
         estThresholdDegrees[i] = N * np.power(N, curr_v)
+        file_object.write("estThresholdDegree = %f\n" % estThresholdDegrees[i])
         estThresholdVs[i] = curr_v
+        file_object.write("estThresholdV = %f\n" % estThresholdVs[i])
+        file_object.write("v_arr:")
+        file_object.write(str(v_arr))
+        file_object.write("\n")
+        file_object.write("length of v_arr = %d\n" % np.size(v_arr))
+        # plot v_arr
+        plotV(N, v_arr)
+        file_object.close()
     return estThresholdDegrees, estThresholdVs
+
+
+
+# plotV(v_arr)
+"""
+Plots values of v from binary search
+Inputs:
+    v_arr = array containing tested values of v
+Outputs:
+    None (generates and saves plot)
+"""
+def plotV(N, v_arr):
+    x = [i for i in range(np.size(v_arr))]
+    y = np.abs(v_arr)
+    plt.plot(x, y)
+    plt.yscale('log')
+    plt.title('Tested values of v for N = %d' % N)
+    plt.xlabel('Test')
+    plt.ylabel('Absolute Value of v')
+    plt.tight_layout()
+    #plt.show()
+    plt.savefig('vPlot_N%d' % N)
+    plt.clf()
+
+
+
+# generatePQHeatmap()
 
 
 
