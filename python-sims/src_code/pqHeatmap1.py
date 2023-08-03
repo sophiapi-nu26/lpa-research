@@ -1,9 +1,12 @@
 from lpafunctions import *
 
-N_values = [400, 800, 1600, 3200, 6400, 12800]
+N_values = [800, 1600, 3200, 6400, 12800]
 community_values = [(i+1) for i in range(4)]
 size_values = [33]
 trial_values = [4]
+
+# N_values = [100]
+# community_values = [2]
 
 for N in N_values:
     for comm in community_values:

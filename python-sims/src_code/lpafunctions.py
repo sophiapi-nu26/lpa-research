@@ -60,6 +60,38 @@ def SBM_default(N, numCommunities, p, q):
 
 
 
+def generate_randomized_stochastic_block_model(N, numCommunities, p, q):
+    """
+    Generates a graph in the stochastic block model with randomized communities.
+
+    Parameters:
+    N (int): Number of nodes in the graph.
+    p (float): Probability of intra-community edges.
+    q (float): Probability of inter-community edges.
+
+    Returns:
+    nx.Graph: A randomized graph in the stochastic block model.
+    """
+    # Generate community assignments for each node
+    communities = np.random.randint(0, numCommunities, N)
+
+    # Create an empty graph
+    G = nx.Graph()
+
+    # Add nodes to the graph with the assigned community
+    G.add_nodes_from((node, {"community": communities[node]}) for node in range(N))
+
+    # Add edges based on community assignments
+    for u in range(N):
+        for v in range(u + 1, N):
+            prob = p if communities[u] == communities[v] else q
+            if np.random.random() < prob:
+                G.add_edge(u, v)
+
+    return G
+
+
+
 # MinRandLPA(G, cap)
 """
 Inputs:
@@ -279,7 +311,8 @@ def generatePQHeatmap(N, numCommunities, size, numTrials):
             for trial in range(numTrials):
                 p = 1/np.power(N, np.abs(a_arr[i]))
                 q = 1/np.power(N, np.abs(b_arr[j]))
-                G = SBM_default(N, numCommunities, p, q)
+                #G = SBM_default(N, numCommunities, p, q)
+                G = generate_randomized_stochastic_block_model(N, numCommunities, p, q)
                 history, iteration = MinRandLPA(G)
                 surviving = SurvivingLabels(history[:,-1])
                 numLabels_sum += np.size(surviving)
