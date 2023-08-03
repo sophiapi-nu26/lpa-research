@@ -1,0 +1,6 @@
+R squared score:
+0.9971964335799947
+y-intercept:
+[1.28141766]
+slope:
+[0.17073179]

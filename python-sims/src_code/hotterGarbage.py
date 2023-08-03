@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
-def generate_randomized_stochastic_block_model(N, p, q):
+def generate_randomized_stochastic_block_model(N, numCommunities, p, q):
     """
     Generates a graph in the stochastic block model with randomized communities.
 
@@ -15,7 +15,7 @@ def generate_randomized_stochastic_block_model(N, p, q):
     nx.Graph: A randomized graph in the stochastic block model.
     """
     # Generate community assignments for each node
-    communities = np.random.randint(0, 2, N)
+    communities = np.random.randint(0, numCommunities, N)
 
     # Create an empty graph
     G = nx.Graph()

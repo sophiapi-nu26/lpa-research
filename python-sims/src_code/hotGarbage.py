@@ -84,3 +84,21 @@ print(adj_matrix)
 
 print("Shuffled adjacency matrix:")
 print(shuffled_adj_matrix)
+
+
+
+
+
+
+
+
+
+r = 0.5 # split between sizes of communities (defaults to half and half)
+communities = np.random.rand(N)
+communities = (communities >= r)
+sizes = np.ones(N) # pretend every vertex is its own community 
+# construct probs matrix
+probs = np.ones((N, N)) * p 
+np.fill_diagonal(np.zeros(N)) # no vertex is adjacent to itself
+probs[:, np.nonzero(communities)]
+

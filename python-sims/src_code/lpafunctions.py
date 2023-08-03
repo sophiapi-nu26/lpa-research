@@ -286,6 +286,118 @@ def plotV(N, v_arr):
 
 
 
+# ER_BinSearchThreshold_p(numTrials, testNValues)
+"""
+Conducts binary search for threshold value of LPA convergence (following procedure in Pfeister thesis) on p 
+To avoid excessively long output, the algorithm terminates once v is precise to +/- 1/N
+Inputs:
+    numTrials = number of independent trials run each time we calculate the proportion of trials that reached consensus
+        defaults to 32, as in Pfeister thesis
+    testNValues = array of values of N for which a threshold value will be estimated
+        defaults to an array indexed 0 through 10 (length 11), where testNValues[i] = 1e5*(2^i)
+    cap = (optional) max number of iterations allowed (per trial) (i.e. if a trial does not reach consensus after [cap] iterations,
+        we consider it not in consensus, even if it would have reached consensus after more iterations), 20 by default
+    
+Outputs:
+    array estThresholdDegrees where estThresholds[i] is the estimated threshold degree value (note this is Np, not p)
+    array estThresholdPs where estThresholdVs is the estimated threshold p value 
+"""
+def ER_BinSearchThreshold_p(numTrials, testNValues, cap=20):
+    # array to hold the estimated values of np for each value of N
+    estThresholdDegrees = np.zeros(np.size(testNValues))
+    # array to hold the estimated values of p for each value of N
+    estThresholdPs = np.zeros(np.size(testNValues))
+    # loop through all values of N
+    for i in range(np.size(testNValues)):
+        N = testNValues[i]
+        # initialize value of p to be 0
+        curr_p = 0
+        # initialize current step size to 0.5
+        curr_step = 0.5
+        # counter to hold the number of trials that reached consensus
+        numConsensus = 0
+        # keep track of proportion of trials reaching consensus
+        proportionCons = 0
+        # create file object to write to
+        file_object = open('N%d_ERBinSearch_onP_output.txt' % N, 'w')
+        file_object.write("N = %d\n" % N)
+        # keep track of all the values of p
+        p_arr = [curr_p]
+        # run binary search until half of the trials reach consensus or curr_step is within 1/(log(N)*N)
+        while (np.abs(numConsensus - numTrials/2) >= 0.5 and curr_step > 1/(np.log2(N)*N)):
+            file_object.write("curr_p = %f\n" % curr_p)
+            # if less than half of the trials reached consensus, increase the value of p
+            if proportionCons < 0.5:
+                curr_p += curr_step
+                p_arr.append(curr_p)
+            # if more than half of the trials reached consensus, decrease the value of p
+            else:
+                curr_p -= curr_step
+                p_arr.append(curr_p)
+            # halve step size
+            curr_step /= 2
+            file_object.write("curr_p %f\n" % curr_p)
+            # reset the number of trials that reached consensus to 0
+            numConsensus = 0
+            # reset the proportion of trials reaching consensus
+            proportionCons = 0
+            # run trials
+            for trial in range(numTrials):
+                G = ER(N, curr_p)
+                history, iteration = MinRandLPA(G, cap)
+                # if reached consensus (i.e. only one surviving label), increment numConsensus
+                if np.size(SurvivingLabels(history[:,-1])) == 1:
+                    numConsensus += 1
+                proportionCons = numConsensus / (trial + 1)
+                #file_object.write("trial = %d\n" % trial)
+                #file_object.write("proportionCons = %f\n" % proportionCons)
+                # if at any point after the first quarter of the trials the proportion of consensus-reaching trials is <= 0.2 or => 0.8, terimnate
+                if trial >= numTrials/4:
+                    if proportionCons <= 0.2 or proportionCons >= 0.8:
+                        #file_object.write("numConsensus/trials = ", numConsensus/(trial+1))
+                        file_object.write("trials run = %d\n" % (trial+1))
+                        break
+            file_object.write("numConsensus = %d\n" % numConsensus)
+            file_object.write("proportionCons = %f\n" % proportionCons)
+        #file_object.write("final curr_p = %f" % curr_p)
+        estThresholdDegrees[i] = N * curr_p
+        file_object.write("estThresholdDegree = %f\n" % estThresholdDegrees[i])
+        estThresholdPs[i] = curr_p
+        file_object.write("estThresholdp = %f\n" % estThresholdPs[i])
+        file_object.write("p_arr:")
+        file_object.write(str(p_arr))
+        file_object.write("\n")
+        file_object.write("length of p_arr = %d\n" % np.size(p_arr))
+        # plot p_arr
+        plotP(N, p_arr)
+        file_object.close()
+    return estThresholdDegrees, estThresholdPs
+
+
+
+# plotP(p_arr)
+"""
+Plots values of p from binary search
+Inputs:
+    p_arr = array containing tested values of p
+Outputs:
+    None (generates and saves plot)
+"""
+def plotP(N, p_arr):
+    x = [i for i in range(np.size(p_arr))]
+    y = np.abs(p_arr)
+    plt.plot(x, y)
+    plt.yscale('log')
+    plt.title('Tested values of p for N = %d' % N)
+    plt.xlabel('Test')
+    plt.ylabel('Absolute value of p')
+    plt.tight_layout()
+    #plt.show()
+    plt.savefig('pPlot_N%d' % N)
+    plt.clf()
+
+
+
 # generatePQHeatmap(N, size, numTrials)
 """
 Generates heatmap of number of surviving labels for the stochastic block model with parameters p = N^a, q = N^b, where a, b between -1 and 0
