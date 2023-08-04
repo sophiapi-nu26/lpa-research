@@ -1,0 +1,67 @@
+N = 1000
+curr_p = 0.000000
+curr_p 0.500000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.500000
+curr_p 0.250000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.250000
+curr_p 0.125000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.125000
+curr_p 0.062500
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.062500
+curr_p 0.031250
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.031250
+curr_p 0.015625
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.015625
+curr_p 0.007812
+numConsensus = 15
+proportionCons = 0.468750
+curr_p = 0.007812
+curr_p 0.011719
+trials run = 9
+numConsensus = 8
+proportionCons = 0.888889
+curr_p = 0.011719
+curr_p 0.009766
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.009766
+curr_p 0.008789
+trials run = 10
+numConsensus = 8
+proportionCons = 0.800000
+curr_p = 0.008789
+curr_p 0.008301
+trials run = 9
+numConsensus = 8
+proportionCons = 0.888889
+curr_p = 0.008301
+curr_p 0.008057
+numConsensus = 22
+proportionCons = 0.687500
+curr_p = 0.008057
+curr_p 0.007935
+numConsensus = 17
+proportionCons = 0.531250
+estThresholdDegree = 7.934570
+estThresholdp = 0.007935
+p_arr:[0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 0.01171875, 0.009765625, 0.0087890625, 0.00830078125, 0.008056640625, 0.0079345703125]
+length of p_arr = 14

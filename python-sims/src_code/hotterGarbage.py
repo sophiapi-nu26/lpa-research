@@ -38,7 +38,7 @@ p = 1  # Probability of intra-community edges
 q = 0  # Probability of inter-community edges
 
 # Generate the graph with randomized communities
-graph = generate_randomized_stochastic_block_model(N, p, q)
+graph = generate_randomized_stochastic_block_model(N, 2, p, q)
 
 # Print the communities of each node
 print(nx.get_node_attributes(graph, "community"))
