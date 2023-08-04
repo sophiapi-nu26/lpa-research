@@ -18,9 +18,8 @@ for i in range(np.size(N_values)):
     N_values[i] = (1000 * int(np.power(2, i)))
 N_values = N_values.astype(np.int64)
 
-N_values = [1000, 2000, 4000, 8000, 16000]
+N_values = [32000, 64000, 128000, 256000]
 print("hello")
-
 
 
 estThresholdDegrees, estThresholdPs = ER_BinSearchThreshold_p(32, N_values)
@@ -29,8 +28,24 @@ print(estThresholdDegrees)
 print("estThresholdPs:")
 print(estThresholdPs)
 
+
+# from previous runs
+prior_N_values = [1000, 2000, 4000, 8000, 16000]
+prior_estThreshDegs = [7.93457031, 8.91113281, 10.13183594, 12.20703125, 15.50292969]
+
+# append prior results to new results
+N_values = np.concatenate((prior_N_values, N_values))
+estThresholdDegrees = np.concatenate((prior_estThreshDegs, estThresholdDegrees))
+
 # get results
 file_object = open('ERBinSearch_onP_results_upto%d.txt' % N_values[-1], 'w')
+file_object.write("N_values:\n")
+file_object.write(str(N_values))
+file_object.write('\n')
+file_object.write("estThresholdDegrees:\n")
+file_object.write(str(estThresholdDegrees))
+file_object.write('\n')
+# fit model
 x = np.log2(N_values)
 y = np.log2(estThresholdDegrees)
 model = LinearRegression().fit(np.reshape(x, (-1,1)), np.reshape(y, (-1,1)))
@@ -53,7 +68,7 @@ plt.plot(x, slope[0]*x + y_intercept)
 plt.title('Estimated threshold (0.5 consensus) degree vs. N')
 plt.xlabel('log(N)')
 plt.ylabel('Log of estimated threshhold degree = log(N*p)')
-plt.savefig('BinSearchPfeister_plot_upto%d' % N_values[-1])
+plt.savefig('BinSearchPfeister_plot_upto%d' % np.max(N_values))
 
 
 
