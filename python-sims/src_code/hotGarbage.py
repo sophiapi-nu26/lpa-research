@@ -1,89 +1,85 @@
 import numpy as np
-from collections import Counter
-from lpafunctions import *
+import matplotlib.pyplot as plt
+# from collections import Counter
+# from lpafunctions import *
 
-# Assuming you have an array of numbers
-data = np.array([1, 2, 3, 2, 4, 3, 3, 4, 4])
+# # Assuming you have an array of numbers
+# data = np.array([1, 2, 3, 2, 4, 3, 3, 4, 4])
 
-# Compute the frequency of each value in the array
-value_counts = Counter(data)
+# # Compute the frequency of each value in the array
+# value_counts = Counter(data)
 
-# Find the maximum frequency (mode)
-max_frequency = max(value_counts.values())
+# # Find the maximum frequency (mode)
+# max_frequency = max(value_counts.values())
 
-# Get all values with the maximum frequency (modes)
-modes = [value for value, count in value_counts.items() if count == max_frequency]
+# # Get all values with the maximum frequency (modes)
+# modes = [value for value, count in value_counts.items() if count == max_frequency]
 
-# Randomly select one of the modes
-selected_mode = np.random.choice(modes)
+# # Randomly select one of the modes
+# selected_mode = np.random.choice(modes)
 
-print("Modes:", modes)
-print("Selected Mode:", selected_mode)
-
-
-filter_data = (data < 3)
-print(filter_data)
-print(np.multiply(data, filter_data))
-
-N = 10
-numComm = 2
-p = 1
-q = 0
-test_ER = ER(N, p)
-A = nx.adjacency_matrix(test_ER).todense()
-print(A)
-print("")
-test_SBM = SBM_default(N, numComm, p, q)
-B = nx.adjacency_matrix(test_SBM).todense()
-print(B)
-# relabel nodes
-# Create the dictionary where the keys are range(N) and values are the random permutation
-newLabels_dict = {k: v for k, v in zip(range(N), np.random.permutation(N))}
-print("")
-print(newLabels_dict)
-test_SBM = nx.relabel_nodes(test_SBM, newLabels_dict, copy=True)
-print("")
-B = nx.adjacency_matrix(test_SBM).todense()
-print(B)
-
-fig, ax = plt.subplots()
-im = ax.imshow(B)
-plt.show()
+# print("Modes:", modes)
+# print("Selected Mode:", selected_mode)
 
 
+# filter_data = (data < 3)
+# print(filter_data)
+# print(np.multiply(data, filter_data))
 
+# N = 10
+# numComm = 2
+# p = 1
+# q = 0
+# test_ER = ER(N, p)
+# A = nx.adjacency_matrix(test_ER).todense()
+# print(A)
+# print("")
+# test_SBM = SBM_default(N, numComm, p, q)
+# B = nx.adjacency_matrix(test_SBM).todense()
+# print(B)
+# # relabel nodes
+# # Create the dictionary where the keys are range(N) and values are the random permutation
+# newLabels_dict = {k: v for k, v in zip(range(N), np.random.permutation(N))}
+# print("")
+# print(newLabels_dict)
+# test_SBM = nx.relabel_nodes(test_SBM, newLabels_dict, copy=True)
+# print("")
+# B = nx.adjacency_matrix(test_SBM).todense()
+# print(B)
+
+# fig, ax = plt.subplots()
+# im = ax.imshow(B)
+# plt.show()
 
 
 
 
 
+# G = test_SBM
 
+# # Get the adjacency matrix
+# adj_matrix = nx.adjacency_matrix(G).toarray()
 
-G = test_SBM
+# # Get the number of nodes in the graph
+# num_nodes = G.number_of_nodes()
 
-# Get the adjacency matrix
-adj_matrix = nx.adjacency_matrix(G).toarray()
+# # Create a random permutation of the node labels
+# random_permutation = np.random.permutation(num_nodes)
 
-# Get the number of nodes in the graph
-num_nodes = G.number_of_nodes()
+# # Create a mapping of old node labels to new shuffled labels
+# mapping = {old_label: new_label for old_label, new_label in enumerate(random_permutation)}
 
-# Create a random permutation of the node labels
-random_permutation = np.random.permutation(num_nodes)
+# # Relabel the nodes in the graph with the shuffled labels
+# shuffled_G = nx.relabel_nodes(G, mapping)
 
-# Create a mapping of old node labels to new shuffled labels
-mapping = {old_label: new_label for old_label, new_label in enumerate(random_permutation)}
+# # Get the adjacency matrix of the shuffled graph
+# shuffled_adj_matrix = nx.adjacency_matrix(shuffled_G).toarray()
 
-# Relabel the nodes in the graph with the shuffled labels
-shuffled_G = nx.relabel_nodes(G, mapping)
+# print("Original adjacency matrix:")
+# print(adj_matrix)
 
-# Get the adjacency matrix of the shuffled graph
-shuffled_adj_matrix = nx.adjacency_matrix(shuffled_G).toarray()
-
-print("Original adjacency matrix:")
-print(adj_matrix)
-
-print("Shuffled adjacency matrix:")
-print(shuffled_adj_matrix)
+# print("Shuffled adjacency matrix:")
+# print(shuffled_adj_matrix)
 
 
 
@@ -93,12 +89,153 @@ print(shuffled_adj_matrix)
 
 
 
-r = 0.5 # split between sizes of communities (defaults to half and half)
-communities = np.random.rand(N)
-communities = (communities >= r)
-sizes = np.ones(N) # pretend every vertex is its own community 
-# construct probs matrix
-probs = np.ones((N, N)) * p 
-np.fill_diagonal(np.zeros(N)) # no vertex is adjacent to itself
-probs[:, np.nonzero(communities)]
+# r = 0.5 # split between sizes of communities (defaults to half and half)
+# communities = np.random.rand(N)
+# communities = (communities >= r)
+# sizes = np.ones(N) # pretend every vertex is its own community 
+# # construct probs matrix
+# probs = np.ones((N, N)) * p 
+# np.fill_diagonal(np.zeros(N)) # no vertex is adjacent to itself
+# probs[:, np.nonzero(communities)]
 
+
+
+# features = np.arange(4) + 1
+# features = np.reshape(features, (1, 4))
+# print(features)
+# print(np.shape(features))
+# trans = np.atleast_2d(features).T
+# print(trans)
+# print(np.shape(trans))
+# mat = np.matmul(trans, features)
+# print(mat)
+# print(np.linalg.inv(mat))
+
+
+# # generate x and y
+# x = np.linspace(0, 1, 11)
+# print(x)
+# y = 1 + x + x * np.random.random(len(x))
+# print(y)
+
+# # assemble matrix A
+# A = np.vstack([x, np.ones(len(x))]).T
+# print(A)
+
+# # turn y into a column vector
+# y = y[:, np.newaxis]
+# print(y)
+
+# def generate_bar_graphs(numRounds, numCommunities):
+#     # Generate random data for each bar graph
+#     data = np.random.rand(numRounds, numCommunities)
+    
+#     # Create a figure with subplots
+#     fig, axes = plt.subplots(nrows=1, ncols=numRounds)
+    
+#     # Loop through each round and create a bar graph
+#     for round_idx, ax in enumerate(axes):
+#         ax.bar(np.arange(numCommunities), data[round_idx])
+#         ax.set_title(f'Round {round_idx + 1}')
+#         ax.set_xticks(np.arange(numCommunities))
+#         ax.set_xticklabels([f'C{i + 1}' for i in range(numCommunities)])
+    
+#     # Adjust layout
+#     plt.tight_layout()
+    
+#     # Show the figure
+#     plt.show()
+
+
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+
+# def generate_multicolored_bar_graphs(numRounds, numCommunities, data_list, y_limit):
+#     # Create a figure with subplots
+#     fig, axes = plt.subplots(nrows=1, ncols=numRounds)
+    
+#     # Set y-axis limits
+#     for ax in axes:
+#         ax.set_ylim(0, y_limit)
+    
+#     # Loop through each round and create a multicolored bar graph
+#     for round_idx, ax in enumerate(axes):
+#         data = data_list[round_idx]
+#         num_vars = len(data)
+#         bar_width = 0.8 / num_vars  # Adjust the width of each bar
+        
+#         for var_idx, var_data in enumerate(data):
+#             x_pos = np.arange(numCommunities) + (var_idx - num_vars / 2) * bar_width
+#             ax.bar(x_pos, var_data, bar_width, label=f'Variable {var_idx + 1}')
+        
+#         ax.set_title(f'Round {round_idx + 1}')
+#         ax.set_xticks(np.arange(numCommunities))
+#         ax.set_xticklabels([f'C{i + 1}' for i in range(numCommunities)])
+#         ax.legend()
+    
+#     # Adjust layout
+#     plt.tight_layout()
+    
+#     # Show the figure
+#     plt.show()
+
+# # Example data (replace this with your actual data)
+# numRounds = 5
+# numCommunities = 8
+# numVariables = 3
+# data_list = [np.random.rand(numVariables, numCommunities) for _ in range(numRounds)]
+# y_limit = 1.5  # Set the y-axis limit
+
+# generate_multicolored_bar_graphs(numRounds, numCommunities, data_list, y_limit)
+
+
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+
+# def generate_stacked_bar_graphs(numRounds, numCommunities, data_list, y_limit):
+#     # Create a figure with subplots
+#     fig, axes = plt.subplots(nrows=1, ncols=numRounds)
+
+#     # Set y-axis limits
+#     for ax in axes:
+#         ax.set_ylim(0, y_limit)
+    
+#     # Loop through each round and create a stacked bar graph
+#     for round_idx, ax in enumerate(axes):
+#         data = data_list[round_idx]
+#         num_vars = len(data)
+#         bar_width = 0.8
+        
+#         bottom = np.zeros(numCommunities)
+#         for var_idx, var_data in enumerate(data):
+#             ax.bar(np.arange(numCommunities), var_data, bar_width, label=f'Label {var_idx + 1}', bottom=bottom)
+#             bottom += var_data
+        
+#         ax.set_title(f'Round {round_idx + 1}')
+#         ax.set_xticks(np.arange(numCommunities))
+#         ax.set_xticklabels([f'C{i + 1}' for i in range(numCommunities)])
+#         ax.legend()
+    
+#     # Adjust layout
+#     plt.tight_layout()
+    
+#     # Show the figure
+#     plt.show()
+
+# # Example data (replace this with your actual data)
+# numRounds = 5
+# numCommunities = 8
+# numVariables = 3
+# data_list = [np.random.rand(numVariables, numCommunities) for _ in range(numRounds)] 
+# # shape = (numRounds, numCommunities, numVariables)
+# print(np.shape(data_list))
+# y_limit = 5
+
+# generate_stacked_bar_graphs(numRounds, numCommunities, data_list, y_limit)
+
+a = np.array([1, 2, 3, 4])
+print(a)
+b = a[:, np.newaxis]
+print(b)

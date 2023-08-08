@@ -92,6 +92,35 @@ def generate_randomized_stochastic_block_model(N, numCommunities, p, q):
 
 
 
+def generate_randomized_stochastic_block_model_with_comm(N, numCommunities, p, q, communities):
+    """
+    Generates a graph in the stochastic block model with randomized communities.
+
+    Parameters:
+    N (int): Number of nodes in the graph.
+    p (float): Probability of intra-community edges.
+    q (float): Probability of inter-community edges.
+
+    Returns:
+    nx.Graph: A randomized graph in the stochastic block model.
+    """
+    # Create an empty graph
+    G = nx.Graph()
+
+    # Add nodes to the graph with the assigned community
+    G.add_nodes_from((node, {"community": communities[node]}) for node in range(N))
+
+    # Add edges based on community assignments
+    for u in range(N):
+        for v in range(u + 1, N):
+            prob = p if communities[u] == communities[v] else q
+            if np.random.random() < prob:
+                G.add_edge(u, v)
+
+    return G
+
+
+
 # MinRandLPA(G, cap)
 """
 Inputs:
@@ -105,11 +134,13 @@ Outputs:
 def MinRandLPA(G, cap=20):
     N = nx.number_of_nodes(G)
     # initialize history; 0th column is initial labels 1 through N
-    history = np.reshape(list(nx.nodes(G)), (-1, 1)) # reshape [1:N] to column shape
+    history = np.array(list(nx.nodes(G)))
+    history = history[:, np.newaxis]
+    #history = np.reshape(list(nx.nodes(G)), (-1, 1)) # reshape [1:N] to column shape
     # initialize iteration
     iteration = 1
     # variable to hold the next label for each vertex; default to its own label
-    nextLabels = history[:, 0]
+    nextLabels = np.copy(history[:, 0])
     # round 1 iteration; break ties to min
     for i in range(N):
         # get list of neighbors
@@ -122,7 +153,8 @@ def MinRandLPA(G, cap=20):
     # print(history)
     # print("nextLabels")
     # print(nextLabels)
-    history = np.hstack((history, nextLabels))
+    history_copy = np.copy(history)
+    history = np.hstack((history_copy, nextLabels))
     # iterate until convergence or cap; break ties uniformly at random
     while iteration <= cap:
         # print(iteration)
@@ -551,6 +583,92 @@ def plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data)
     plt.savefig('numLabelsFilt_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
     plt.clf()
 
+
+
+# graphSwitching(N, numCommunities, p, q, numRounds=5)
+"""
+Generates bar graph/histogram for labels over numRounds rounds of the LPA
+Inputs:
+    N = number of nodes
+    numCommunities = number of communities
+    p = inter-community adjacency probability
+    q = intra-community adjacency probability
+    numRounds = (optional) input that specifies the number of rounds to generate
+Outputs:
+    None (saves plot to file)
+"""
+def graphSwitching(N, numCommunities, p, q, numRounds=5):
+    communities = np.random.randint(numCommunities, size=N)
+    G = generate_randomized_stochastic_block_model_with_comm(N, numCommunities, p, q, communities)
+    history, iteration = MinRandLPA(G, cap=numRounds)
+
+    # print('history:')
+    # print(history)
+
+    # if the round is larger than the last iteration before convergence
+    totalRounds = np.min((numRounds, iteration)) + 1 # round 0
+    bar_data = np.zeros((totalRounds, numCommunities, numCommunities))
+
+    # find smallest label in each community
+    smallestLabels = np.zeros(numCommunities)
+    for community in range(numCommunities):
+        member_indices = np.where(communities == community)[0]
+        smallestLabels[community] = member_indices[0]
+    
+    for round in range(totalRounds):
+        round_hist = history[:, round]
+        for community in range(numCommunities):
+            # separate out by community
+            member_indices = np.where(communities == community)[0]
+            filtered_hist = round_hist[member_indices]
+            for labelInd in range(numCommunities):
+                bar_data[round, community, labelInd] = np.sum(filtered_hist == smallestLabels[labelInd])
+    
+    # print('bar_data:')
+    # print(bar_data)
+
+    generate_stacked_bar_graphs(N, numRounds, totalRounds, numCommunities, p, q, smallestLabels, bar_data, N)
+
+
+
+def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, p, q, smallestLabels, data_list, y_limit):
+    # Create a figure with subplots
+    fig, axes = plt.subplots(nrows=1, ncols=numRounds)
+
+    # Set y-axis limits
+    for ax in axes:
+        ax.set_ylim(0, y_limit)
+    
+    # Loop through each round and create a stacked bar graph
+    for round_idx, ax in enumerate(axes):
+        data = data_list[round_idx]
+        num_vars = len(data)
+        bar_width = 0.8
+        
+        bottom = np.zeros(numCommunities)
+        for var_idx, var_data in enumerate(data):
+            ax.bar(np.arange(numCommunities), var_data, bar_width, label=f'Label {int(smallestLabels[var_idx])}', bottom=bottom)
+            bottom += var_data
+        
+        ax.set_title(f'Round {round_idx}')
+        #ax.set_yscale('log')
+        ax.set_xticks(np.arange(numCommunities))
+        ax.set_xticklabels([f'C{i + 1}' for i in range(numCommunities)])
+        ax.legend()
+    
+    # set title
+    #ax.text(0.5, 0.5, 'Label History (N=%d, numComms=%d, \np=%.3f, q=%.3f, maxRounds=%d)' % (N, numCommunities, p, q, maxRounds), 
+    #         horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
+
+    # Adjust layout
+    plt.tight_layout()
+
+    #plt.show()
+    
+    # save
+    plt.savefig('labelHistoryBars_N%d_%dcomm_p%.3f_q%.3f_%dmaxRounds.png' % (N, numCommunities, p, q, maxRounds))
+
+    plt.clf()
 
 
 # other functions
