@@ -599,6 +599,10 @@ Outputs:
 """
 def graphSwitching(N, numCommunities, p, q, numRounds=5):
     communities = np.random.randint(numCommunities, size=N)
+
+    # print('communities:')
+    # print(communities)
+
     G = generate_randomized_stochastic_block_model_with_comm(N, numCommunities, p, q, communities)
     history, iteration = MinRandLPA(G, cap=numRounds)
 
@@ -642,11 +646,12 @@ def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, p, q, s
     # Loop through each round and create a stacked bar graph
     for round_idx, ax in enumerate(axes):
         data = data_list[round_idx]
-        num_vars = len(data)
+        dataCopy = np.copy(data).T
+        # num_vars = len(data)
         bar_width = 0.8
         
         bottom = np.zeros(numCommunities)
-        for var_idx, var_data in enumerate(data):
+        for var_idx, var_data in enumerate(dataCopy):
             ax.bar(np.arange(numCommunities), var_data, bar_width, label=f'Label {int(smallestLabels[var_idx])}', bottom=bottom)
             bottom += var_data
         
