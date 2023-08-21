@@ -597,11 +597,14 @@ Inputs:
 Outputs:
     None (saves plot to file)
 """
-def graphSwitching(N, numCommunities, p, q, numRounds=5):
+def graphSwitching(N, numCommunities, a, b, numRounds=5):
     communities = np.random.randint(numCommunities, size=N)
 
     # print('communities:')
     # print(communities)
+
+    p = N**(-a)
+    q = N**(-b)
 
     G = generate_randomized_stochastic_block_model_with_comm(N, numCommunities, p, q, communities)
     history, iteration = MinRandLPA(G, cap=numRounds)
@@ -631,7 +634,7 @@ def graphSwitching(N, numCommunities, p, q, numRounds=5):
     # print('bar_data:')
     # print(bar_data)
 
-    generate_stacked_bar_graphs(N, numRounds, totalRounds, numCommunities, p, q, smallestLabels, bar_data, N)
+    generate_stacked_bar_graphs(N, numRounds, totalRounds, numCommunities, a, b, smallestLabels, bar_data, N)
 
 
 
@@ -671,7 +674,7 @@ def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, p, q, s
     #plt.show()
     
     # save
-    plt.savefig('labelHistoryBars_N%d_%dcomm_p%.3f_q%.3f_%dmaxRounds.png' % (N, numCommunities, p, q, maxRounds))
+    plt.savefig('labelHistoryBars_N%d_%dcomm_a%.3f_b%.3f_%dmaxRounds.png' % (N, numCommunities, a, b, maxRounds))
 
     plt.clf()
 
