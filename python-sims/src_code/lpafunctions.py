@@ -603,8 +603,8 @@ def graphSwitching(N, numCommunities, a, b, numRounds=5):
     # print('communities:')
     # print(communities)
 
-    p = N**(-a)
-    q = N**(-b)
+    p = N**(a)
+    q = N**(b)
 
     G = generate_randomized_stochastic_block_model_with_comm(N, numCommunities, p, q, communities)
     history, iteration = MinRandLPA(G, cap=numRounds)
@@ -638,7 +638,7 @@ def graphSwitching(N, numCommunities, a, b, numRounds=5):
 
 
 
-def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, p, q, smallestLabels, data_list, y_limit):
+def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, a, b, smallestLabels, data_list, y_limit):
     # Create a figure with subplots
     fig, axes = plt.subplots(nrows=1, ncols=numRounds)
 
@@ -667,6 +667,10 @@ def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, p, q, s
     # set title
     #ax.text(0.5, 0.5, 'Label History (N=%d, numComms=%d, \np=%.3f, q=%.3f, maxRounds=%d)' % (N, numCommunities, p, q, maxRounds), 
     #         horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
+
+    #plt.title('a=%.3f, b=%.3f' % (a, b))
+
+    text = fig.text(0.50, 0.02, 'a=%.3f, b=%.3f' % (a, b), horizontalalignment='center', wrap=True ) 
 
     # Adjust layout
     plt.tight_layout()

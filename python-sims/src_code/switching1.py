@@ -2,7 +2,7 @@
 
 from lpafunctions import *
 
-N_arr = [1000]
+N_arr = [10000]
 numCommunities_arr = [1, 2, 3, 4]
 
 a_arr = np.linspace(-1, -0.7, 4)
