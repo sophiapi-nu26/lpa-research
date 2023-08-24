@@ -1,0 +1,92 @@
+N = 25600
+curr_p = 0.000000
+curr_p 0.500000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.500000
+curr_p 0.250000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.250000
+curr_p 0.125000
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.125000
+curr_p 0.062500
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.062500
+curr_p 0.031250
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.031250
+curr_p 0.015625
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.015625
+curr_p 0.007812
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.007812
+curr_p 0.003906
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.003906
+curr_p 0.001953
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.001953
+curr_p 0.000977
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.000977
+curr_p 0.000488
+trials run = 9
+numConsensus = 9
+proportionCons = 1.000000
+curr_p = 0.000488
+curr_p 0.000244
+trials run = 9
+numConsensus = 0
+proportionCons = 0.000000
+curr_p = 0.000244
+curr_p 0.000366
+trials run = 9
+numConsensus = 1
+proportionCons = 0.111111
+curr_p = 0.000366
+curr_p 0.000427
+numConsensus = 24
+proportionCons = 0.750000
+curr_p = 0.000427
+curr_p 0.000397
+trials run = 9
+numConsensus = 1
+proportionCons = 0.111111
+curr_p = 0.000397
+curr_p 0.000412
+numConsensus = 18
+proportionCons = 0.562500
+curr_p = 0.000412
+curr_p 0.000404
+numConsensus = 13
+proportionCons = 0.406250
+curr_p = 0.000404
+curr_p 0.000408
+trials run = 15
+numConsensus = 12
+proportionCons = 0.800000
+estThresholdDegree = 10.449219
+estThresholdp = 0.000408
+p_arr:[0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 0.00390625, 0.001953125, 0.0009765625, 0.00048828125, 0.000244140625, 0.0003662109375, 0.00042724609375, 0.000396728515625, 0.0004119873046875, 0.00040435791015625, 0.000408172607421875]
+length of p_arr = 19

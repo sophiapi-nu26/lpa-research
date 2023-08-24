@@ -176,6 +176,55 @@ def MinRandLPA(G, cap=20):
 
 
 
+# MinMinLPA(G, cap)
+"""
+Runs LPA where ties are broken towards the minimum label
+Inputs:
+    G = graph
+    cap = (optional) max number of iterations allowed before termination of algorithm, 20 by default
+
+Outputs:
+    history = N by (iteration + 1) matrix with the state history of the simulation
+    iteration = Last completed iteration
+"""
+def MinMinLPA(G, cap=20):
+    N = nx.number_of_nodes(G)
+    # initialize history; 0th column is initial labels 1 through N
+    history = np.array(list(nx.nodes(G)))
+    history = history[:, np.newaxis]
+    # initialize iteration
+    iteration = 1
+    # variable to hold the next label for each vertex; default to its own label
+    nextLabels = np.copy(history[:, 0])
+    # round 1 iteration; break ties to min
+    for i in range(N):
+        # get list of neighbors
+        neighbors = [n for n in G.neighbors(i)]
+        # only overwrite nextLabels if vertex has neighbors
+        if np.size(neighbors) != 0:
+            nextLabels[i] = np.min([np.min(neighbors), i])
+    nextLabels = np.reshape(nextLabels, (-1, 1))
+    history_copy = np.copy(history)
+    history = np.hstack((history_copy, nextLabels))
+    # iterate until convergence or cap; break ties uniformly at random
+    while iteration <= cap:
+        for i in range(N):
+            # get list of neighbors
+            neighbors = [n for n in G.neighbors(i)]
+            # only overwrite nextLabels if vertex has neighbors
+            if np.size(neighbors) != 0:
+                neighborLabels = history[neighbors, iteration]
+                nextLabels[i] = __min_mode(neighborLabels)
+        history = np.hstack((history, nextLabels))
+        # if the labels are the same, break
+        if np.array_equal(history[:, -1], history[:, -2]):
+            break
+        # update iteration
+        iteration += 1
+    return history, iteration
+
+
+
 # SurvivingLabels(finalLabels)
 """
 Returns the surviving labels
@@ -407,6 +456,103 @@ def ER_BinSearchThreshold_p(numTrials, testNValues, cap=20):
 
 
 
+# MinMin_ER_BinSearchThreshold_p(numTrials, testNValues)
+"""
+Conducts binary search for threshold value of LPA convergence (following procedure in Pfeister thesis) on p 
+To avoid excessively long output, the algorithm terminates once v is precise to +/- 1/N
+Inputs:
+    numTrials = number of independent trials run each time we calculate the proportion of trials that reached consensus
+        defaults to 32, as in Pfeister thesis
+    testNValues = array of values of N for which a threshold value will be estimated
+        defaults to an array indexed 0 through 10 (length 11), where testNValues[i] = 1e5*(2^i)
+    cap = (optional) max number of iterations allowed (per trial) (i.e. if a trial does not reach consensus after [cap] iterations,
+        we consider it not in consensus, even if it would have reached consensus after more iterations), 20 by default
+    
+Outputs:
+    array estThresholdDegrees where estThresholds[i] is the estimated threshold degree value (note this is Np, not p)
+    array estThresholdPs where estThresholdVs is the estimated threshold p value 
+"""
+def MinMin_ER_BinSearchThreshold_p(numTrials, testNValues, cap=20):
+    # array to hold the estimated values of np for each value of N
+    estThresholdDegrees = np.zeros(np.size(testNValues))
+    # array to hold the estimated values of p for each value of N
+    estThresholdPs = np.zeros(np.size(testNValues))
+    # loop through all values of N
+    for i in range(np.size(testNValues)):
+        N = testNValues[i]
+        print('N = %d' % N)
+        # initialize value of p to be 0
+        curr_p = 0
+        # initialize current step size to 0.5
+        curr_step = 0.5
+        # counter to hold the number of trials that reached consensus
+        numConsensus = 0
+        # keep track of proportion of trials reaching consensus
+        proportionCons = 0
+        # create file object to write to
+        file_object = open('N%d_MinMin_ERBinSearch_onP_output.txt' % N, 'w')
+        file_object.write("N = %d\n" % N)
+        # keep track of all the values of p
+        p_arr = [curr_p]
+        # run binary search until half of the trials reach consensus or curr_step is within 1/(log(N)*N)
+        while (np.abs(numConsensus - numTrials/2) >= 0.5 and curr_step > 1/(np.log2(N)*N)):
+            file_object.write("curr_p = %f\n" % curr_p)
+            print("curr_p = %f\n" % curr_p)
+            # if less than half of the trials reached consensus, increase the value of p
+            if proportionCons < 0.5:
+                curr_p += curr_step
+                p_arr.append(curr_p)
+            # if more than half of the trials reached consensus, decrease the value of p
+            else:
+                curr_p -= curr_step
+                p_arr.append(curr_p)
+            # halve step size
+            curr_step /= 2
+            file_object.write("curr_p %f\n" % curr_p)
+            print("curr_p = %f\n" % curr_p)
+            # reset the number of trials that reached consensus to 0
+            numConsensus = 0
+            # reset the proportion of trials reaching consensus
+            proportionCons = 0
+            # run trials
+            for trial in range(numTrials):
+                G = ER(N, curr_p)
+                history, iteration = MinMinLPA(G, cap)
+                # if reached consensus (i.e. only one surviving label), increment numConsensus
+                if np.size(SurvivingLabels(history[:,-1])) == 1:
+                    numConsensus += 1
+                proportionCons = numConsensus / (trial + 1)
+                # if at any point after the first quarter of the trials the proportion of consensus-reaching trials is <= 0.2 or => 0.8, terimnate
+                if trial >= numTrials/4:
+                    if proportionCons <= 0.2 or proportionCons >= 0.8:
+                        #file_object.write("numConsensus/trials = ", numConsensus/(trial+1))
+                        file_object.write("trials run = %d\n" % (trial+1))
+                        print("trials run = %d\n" % (trial+1))
+                        break
+            file_object.write("numConsensus = %d\n" % numConsensus)
+            print("numConsensus = %d\n" % numConsensus)
+            file_object.write("proportionCons = %f\n" % proportionCons)
+            print("proportionCons = %f\n" % proportionCons)
+        estThresholdDegrees[i] = N * curr_p
+        file_object.write("estThresholdDegree = %f\n" % estThresholdDegrees[i])
+        print("estThresholdDegree = %f\n" % estThresholdDegrees[i])
+        estThresholdPs[i] = curr_p
+        file_object.write("estThresholdp = %f\n" % estThresholdPs[i])
+        print("estThresholdp = %f\n" % estThresholdPs[i])
+        file_object.write("p_arr:")
+        print("p_arr:")
+        file_object.write(str(p_arr))
+        print(str(p_arr))
+        file_object.write("\n")
+        file_object.write("length of p_arr = %d\n" % np.size(p_arr))
+        print("length of p_arr = %d\n" % np.size(p_arr))
+        # plot p_arr
+        plotP(N, p_arr)
+        file_object.close()
+    return estThresholdDegrees, estThresholdPs
+
+
+
 # plotP(p_arr)
 """
 Plots values of p from binary search
@@ -442,29 +588,34 @@ Outputs:
     2D array numLabels_data where heatmapData[j][i] is the average number of surviving labels for p = N^(-i/(size-1)), q = N^(-j/(size-1))
     2D array largestNonzeroLabel_data where heatmapData[j][i] is the average largest surviving label for p = N^(-i/(size-1)), q = N^(-j/(size-1))
 """
-def generatePQHeatmap(N, numCommunities, size, numTrials):
+def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20):
     # initialize 2D array
     numLabels_data = np.zeros((size, size))
     maxNonzeroLabel_data = np.zeros((size, size))
+    numIterations_data = np.zeros((size, size))
     b_arr = np.linspace(0, -1, num = size)
     a_arr = np.linspace(0, -1, num = size)
     for j in range(size):
         for i in range(size):
             numLabels_sum = 0
             maxNonzero_sum = 0
+            numIterations_sum = 0
             for trial in range(numTrials):
                 p = 1/np.power(N, np.abs(a_arr[i]))
                 q = 1/np.power(N, np.abs(b_arr[j]))
                 #G = SBM_default(N, numCommunities, p, q)
                 G = generate_randomized_stochastic_block_model(N, numCommunities, p, q)
-                history, iteration = MinRandLPA(G)
+                history, iteration = MinRandLPA(G, cap)
                 surviving = SurvivingLabels(history[:,-1])
                 numLabels_sum += np.size(surviving)
                 maxNonzero_sum += np.max(surviving)
+                numIterations_sum += iteration
             numLabels_data[j][i] = numLabels_sum / numTrials
             maxNonzeroLabel_data[j][i] = maxNonzero_sum / numTrials
+            numIterations_data[j][i] = numIterations_sum / numTrials
     plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data)
     plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzeroLabel_data)
+    plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_data, cap)
     # filter out values greater than numCommunities; replace with -1
     filtered_numLabels_data = numLabels_data
     filtered_numLabels_data = np.multiply(filtered_numLabels_data, (filtered_numLabels_data <= numCommunities))
@@ -544,6 +695,45 @@ def plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzero_data):
     #plt.show()
     plt.savefig('maxSurviving_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
     plt.clf()
+
+
+
+# plotNumIterationsHeatmap(N, numCommmunities, numTrials, maxNonzero_data)
+"""
+Plots and saves heatmap of average total number of iterations
+"""
+def plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_data, cap):
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(numIterations_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, numIterations_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("Average Total Number of Iterations (cap %d) on SBM where \nN = %d on %d Communities with %d Trials" % (cap, N, numCommunities, numTrials))
+    ax.set_xlabel('-32*a where p = N^a')
+    ax.set_ylabel('b where q = N^b')
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('numIterations_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
+    plt.clf()
+
 
 
 
@@ -681,6 +871,7 @@ def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, a, b, s
     plt.savefig('labelHistoryBars_N%d_%dcomm_a%.3f_b%.3f_%dmaxRounds.png' % (N, numCommunities, a, b, maxRounds))
 
     plt.clf()
+    plt.close()
 
 
 # other functions
@@ -710,6 +901,29 @@ def __mode(data):
 
     # Randomly select one of the modes
     return np.random.choice(modes)
+
+
+
+# __min_mode(data)
+"""
+Helper method to select minimum mode of an array
+Inputs:
+    data = array of numbers
+Outputs:
+    mode, breaking ties uniformly at random
+"""
+def __min_mode(data):
+    # Compute the frequency of each value in the array
+    value_counts = Counter(data)
+
+    # Find the maximum frequency (mode)
+    max_frequency = max(value_counts.values())
+
+    # Get all values with the maximum frequency (modes)
+    modes = [value for value, count in value_counts.items() if count == max_frequency]
+
+    # Randomly select one of the modes
+    return np.min(modes)
 
 
 

@@ -19,6 +19,7 @@ for i in range(np.size(N_values)):
 N_values = N_values.astype(np.int64)
 
 N_values = [32000, 64000, 128000, 256000]
+N_values = [1600, 3200, 6400, 12800] # COMMENT OUT
 print("hello")
 
 

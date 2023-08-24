@@ -5,7 +5,7 @@ community_values = [(i+1) for i in range(4)]
 size_values = [33]
 trial_values = [4]
 
-N_values = [100]
+N_values = [6400]
 community_values = [2]
 
 for N in N_values:

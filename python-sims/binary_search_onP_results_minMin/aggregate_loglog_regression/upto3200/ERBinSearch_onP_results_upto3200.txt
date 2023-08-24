@@ -1,0 +1,10 @@
+N_values:
+[1600, 3200]
+estThresholdDegrees:
+[7.6171875  8.69140625]
+R squared score:
+1.0
+y-intercept:
+[0.90340036]
+slope:
+[0.19033121]
