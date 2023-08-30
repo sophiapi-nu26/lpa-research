@@ -588,11 +588,12 @@ Outputs:
     2D array numLabels_data where heatmapData[j][i] is the average number of surviving labels for p = N^(-i/(size-1)), q = N^(-j/(size-1))
     2D array largestNonzeroLabel_data where heatmapData[j][i] is the average largest surviving label for p = N^(-i/(size-1)), q = N^(-j/(size-1))
 """
-def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20):
+def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20, type='minRand'):
     # initialize 2D array
     numLabels_data = np.zeros((size, size))
     maxNonzeroLabel_data = np.zeros((size, size))
     numIterations_data = np.zeros((size, size))
+    switching_data = np.zeros((size, size))
     b_arr = np.linspace(0, -1, num = size)
     a_arr = np.linspace(0, -1, num = size)
     for j in range(size):
@@ -605,7 +606,12 @@ def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20):
                 q = 1/np.power(N, np.abs(b_arr[j]))
                 #G = SBM_default(N, numCommunities, p, q)
                 G = generate_randomized_stochastic_block_model(N, numCommunities, p, q)
-                history, iteration = MinRandLPA(G, cap)
+                if type == 'minRand':
+                    history, iteration = MinRandLPA(G, cap)
+                elif type == 'minMin':
+                    history, iteration = MinMinLPA(G, cap)
+                else :
+                    TypeError('type argument must be either minRand or minMin')
                 surviving = SurvivingLabels(history[:,-1])
                 numLabels_sum += np.size(surviving)
                 maxNonzero_sum += np.max(surviving)
@@ -613,14 +619,18 @@ def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20):
             numLabels_data[j][i] = numLabels_sum / numTrials
             maxNonzeroLabel_data[j][i] = maxNonzero_sum / numTrials
             numIterations_data[j][i] = numIterations_sum / numTrials
-    plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data)
-    plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzeroLabel_data)
-    plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_data, cap)
+    plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data, type)
+    plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzeroLabel_data, type)
+    plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_data, cap, type)
     # filter out values greater than numCommunities; replace with -1
     filtered_numLabels_data = numLabels_data
     filtered_numLabels_data = np.multiply(filtered_numLabels_data, (filtered_numLabels_data <= numCommunities))
-    plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, filtered_numLabels_data)
+    plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, filtered_numLabels_data, type)
     return numLabels_data, maxNonzeroLabel_data
+
+
+
+# switched(history)
 
 
 
@@ -628,7 +638,8 @@ def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20):
 """
 Plots and saves heatmap of number avg # of surviving labels
 """
-def plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data):
+def plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data, type):
+    print('plotting numLabels_heatmap_N%d_%dcomm_%dtrials_%s' % (N, numCommunities, numTrials, type))
     b_arr = np.linspace(0, -1, num = size)
     a_arr = np.linspace(0, -1, num = size)
 
@@ -652,88 +663,13 @@ def plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data):
             text = ax.text(i, j, numLabels_data[j, i],
                         fontsize = 4, ha="center", va="center", color="w")
 
-    ax.set_title("Average # of Surviving Labels on SBM where \nN = %d on %d Communities Over %d Trials" % (N, numCommunities, numTrials))
-    ax.set_xlabel('a where p = N^a')
-    ax.set_ylabel('b where q = N^b')
+    ax.set_title("(%sLPA) Average # of Surviving Labels on SBM where \nN = %d on %d Communities Over %d Trials" % (type, N, numCommunities, numTrials))
+    ax.set_xlabel('a where p = N^(-a/32)')
+    ax.set_ylabel('b where q = N^(-b/32)')
     fig.tight_layout()
     #plt.show()
-    plt.savefig('numLabels_heatmap_N%d_%dcomm_%dtrials' % (N, numCommunities, numTrials))
-    plt.clf()
-
-
-
-# plotMaxNonzeroHeatmap(N, numCommmunities, numTrials, maxNonzero_data)
-"""
-Plots and saves heatmap of average maximum surviving label
-"""
-def plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzero_data):
-    b_arr = np.linspace(0, -1, num = size)
-    a_arr = np.linspace(0, -1, num = size)
-
-    fig, ax = plt.subplots()
-    im = ax.imshow(maxNonzero_data)
-
-    # Show all ticks and label them with the respective list entries
-    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
-    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
-
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-            rotation_mode="anchor")
-    
-    # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax)
-
-    # Loop over data dimensions and create text annotations.
-    for i in range(len(b_arr)):
-        for j in range(len(a_arr)):
-            text = ax.text(i, j, maxNonzero_data[j, i],
-                        fontsize = 4, ha="center", va="center", color="w")
-
-    ax.set_title("Average Max Surviving Label on SBM where \nN = %d on %d Communities with %d Trials" % (N, numCommunities, numTrials))
-    fig.tight_layout()
-    #plt.show()
-    plt.savefig('maxSurviving_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
-    plt.clf()
-
-
-
-# plotNumIterationsHeatmap(N, numCommmunities, numTrials, maxNonzero_data)
-"""
-Plots and saves heatmap of average total number of iterations
-"""
-def plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_data, cap):
-    b_arr = np.linspace(0, -1, num = size)
-    a_arr = np.linspace(0, -1, num = size)
-
-    fig, ax = plt.subplots()
-    im = ax.imshow(numIterations_data)
-
-    # Show all ticks and label them with the respective list entries
-    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
-    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
-
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-            rotation_mode="anchor")
-    
-    # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax)
-
-    # Loop over data dimensions and create text annotations.
-    for i in range(len(b_arr)):
-        for j in range(len(a_arr)):
-            text = ax.text(i, j, numIterations_data[j, i],
-                        fontsize = 4, ha="center", va="center", color="w")
-
-    ax.set_title("Average Total Number of Iterations (cap %d) on SBM where \nN = %d on %d Communities with %d Trials" % (cap, N, numCommunities, numTrials))
-    ax.set_xlabel('-32*a where p = N^a')
-    ax.set_ylabel('b where q = N^b')
-    fig.tight_layout()
-    #plt.show()
-    plt.savefig('numIterations_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
-    plt.clf()
-
+    plt.savefig('numLabels_heatmap_N%d_%dcomm_%dtrials_%s' % (N, numCommunities, numTrials, type))
+    plt.close()
 
 
 
@@ -741,7 +677,8 @@ def plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_d
 """
 Plots and saves heatmap of number avg # of surviving labels, filtered outfor the values that are 
 """
-def plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data):
+def plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data, type):
+    print('plotting numLabelsFilt_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
     b_arr = np.linspace(0, -1, num = size)
     a_arr = np.linspace(0, -1, num = size)
 
@@ -765,17 +702,95 @@ def plotFiltNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data)
             text = ax.text(i, j, numLabels_data[j, i],
                         fontsize = 4, ha="center", va="center", color="w")
 
-    ax.set_title("Average # of Surviving Labels (Filtered) on SBM where \nN = %d on %d Communities Over %d Trials" % (N, numCommunities, numTrials))
-    ax.set_xlabel('a where p = N^a')
-    ax.set_ylabel('b where q = N^b')
+    ax.set_title("(%sLPA) Average # of Surviving Labels (Filtered) on SBM where \nN = %d on %d Communities Over %d Trials" % (type, N, numCommunities, numTrials))
+    ax.set_xlabel('a where p = N^(-a/32)')
+    ax.set_ylabel('b where q = N^(-b/32)')
     fig.tight_layout()
     #plt.show()
-    plt.savefig('numLabelsFilt_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
-    plt.clf()
+    plt.savefig('numLabelsFilt_heatmap_N%d_%dcomm_%dtrials_%s' %(N, numCommunities, numTrials, type))
+    plt.close()
 
 
 
-# graphSwitching(N, numCommunities, p, q, numRounds=5)
+# plotMaxNonzeroHeatmap(N, numCommmunities, numTrials, maxNonzero_data)
+"""
+Plots and saves heatmap of average maximum surviving label
+"""
+def plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzero_data, type):
+    print('plotting maxSurviving_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(maxNonzero_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, maxNonzero_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("(%sLPA) Average Max Surviving Label on SBM where \nN = %d on %d Communities with %d Trials" % (type, N, numCommunities, numTrials))
+    ax.set_xlabel('-32*a where p = N^(-a/32)')
+    ax.set_ylabel('b where q = N^(-b/32)')
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('maxSurviving_heatmap_N%d_%dcomm_%dtrials_%s' %(N, numCommunities, numTrials, type))
+    plt.close()
+
+
+
+# plotNumIterationsHeatmap(N, numCommmunities, numTrials, maxNonzero_data)
+"""
+Plots and saves heatmap of average total number of iterations
+"""
+def plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_data, cap, type):
+    print('plotting numIterations_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(numIterations_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, numIterations_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("(%sLPA) Average Total Number of Iterations (cap %d) on SBM where \nN = %d on %d Communities with %d Trials" % (type, cap, N, numCommunities, numTrials))
+    ax.set_xlabel('-32*a where p = N^(-a/32)')
+    ax.set_ylabel('b where q = N^(-b/32)')
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('numIterations_heatmap_N%d_%dcomm_%dtrials_%s' %(N, numCommunities, numTrials, type))
+    plt.close()
+
+
+
+# labelHistory(N, numCommunities, p, q, numRounds=5)
 """
 Generates bar graph/histogram for labels over numRounds rounds of the LPA
 Inputs:
@@ -787,8 +802,11 @@ Inputs:
 Outputs:
     None (saves plot to file)
 """
-def graphSwitching(N, numCommunities, a, b, numRounds=5):
-    communities = np.random.randint(numCommunities, size=N)
+def labelHistory(N, numCommunities, a, b, numRounds=5):
+    # communities = np.random.randint(numCommunities, size=N)
+    communities = np.zeros(N)
+    inds = np.random.choice(np.arange(N), int(N/numCommunities), replace=False)
+    communities[inds] = 1
 
     # print('communities:')
     # print(communities)
@@ -865,10 +883,10 @@ def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, a, b, s
     # Adjust layout
     plt.tight_layout()
 
-    #plt.show()
+    plt.show()
     
     # save
-    plt.savefig('labelHistoryBars_N%d_%dcomm_a%.3f_b%.3f_%dmaxRounds.png' % (N, numCommunities, a, b, maxRounds))
+    #plt.savefig('labelHistoryBars_N%d_%dcomm_a%.3f_b%.3f_%dmaxRounds.png' % (N, numCommunities, a, b, maxRounds))
 
     plt.clf()
     plt.close()
