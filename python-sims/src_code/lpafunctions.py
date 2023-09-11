@@ -4,6 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from scipy import stats as st
 from collections import Counter
+import matplotlib.colors as mcolors
 
 
 
@@ -129,7 +130,7 @@ Inputs:
 
 Outputs:
     history = N by (iteration + 1) matrix with the state history of the simulation
-    iteration = Last completed iteration
+    iteration = Last completed iteration (as in history[iteration] = last UNIQUE round)
 """
 def MinRandLPA(G, cap=20):
     N = nx.number_of_nodes(G)
@@ -594,6 +595,12 @@ def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20, type='minRand'
     maxNonzeroLabel_data = np.zeros((size, size))
     numIterations_data = np.zeros((size, size))
     switching_data = np.zeros((size, size))
+    # --- SPLASH ZONE< THIS IS MESSY ---
+    intraCommMin_data = []
+    for _ in range(numCommunities):
+        intraCommMin_data.append(np.zeros((cap + 1, size, size)))
+    # --- END SPLASH ZONE ---
+    correctness_data = np.zeros((size, size))
     b_arr = np.linspace(0, -1, num = size)
     a_arr = np.linspace(0, -1, num = size)
     for j in range(size):
@@ -601,11 +608,24 @@ def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20, type='minRand'
             numLabels_sum = 0
             maxNonzero_sum = 0
             numIterations_sum = 0
+            switching_sum = 0
+            correctness_sum = 0
             for trial in range(numTrials):
                 p = 1/np.power(N, np.abs(a_arr[i]))
                 q = 1/np.power(N, np.abs(b_arr[j]))
                 #G = SBM_default(N, numCommunities, p, q)
-                G = generate_randomized_stochastic_block_model(N, numCommunities, p, q)
+                # G = generate_randomized_stochastic_block_model(N, numCommunities, p, q)
+
+                # generate communities
+                # --- this was to get *exactly* half of the vertices in one community
+                # communities = np.zeros(N)
+                # inds = np.random.choice(np.arange(N), int(N/numCommunities), replace=False)
+                # communities[inds] = 1
+                # ------
+                communities = np.random.randint(numCommunities, size=N)
+                # generate graph
+                G = generate_randomized_stochastic_block_model_with_comm(N, numCommunities, p, q, communities)
+
                 if type == 'minRand':
                     history, iteration = MinRandLPA(G, cap)
                 elif type == 'minMin':
@@ -616,12 +636,21 @@ def generatePQHeatmap(N, numCommunities, size, numTrials, cap=20, type='minRand'
                 numLabels_sum += np.size(surviving)
                 maxNonzero_sum += np.max(surviving)
                 numIterations_sum += iteration
+                switching_sum += isSwitching(history)
+                correctness_sum += isCorrect(history, communities)
+                # update intraCommMin_data
+                intraCommMin_data = commMinConcentrations(N, numTrials, history, iteration, intraCommMin_data, communities, j, i, cap)
             numLabels_data[j][i] = numLabels_sum / numTrials
             maxNonzeroLabel_data[j][i] = maxNonzero_sum / numTrials
             numIterations_data[j][i] = numIterations_sum / numTrials
+            switching_data[j][i] = switching_sum / numTrials
+            correctness_data[j][i] = correctness_sum / numTrials
     plotNumLabelsHeatmap(N, numCommunities, size, numTrials, numLabels_data, type)
     plotMaxNonzeroHeatmap(N, numCommunities, size, numTrials, maxNonzeroLabel_data, type)
     plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_data, cap, type)
+    plotSwitchingHeatmap(N, numCommunities, size, numTrials, switching_data, cap, type)
+    plotCommMinHeatmap(N, numCommunities, size, numTrials, intraCommMin_data, cap, type)
+    plotCorrectnessHeatmap(N, numCommunities, size, numTrials, correctness_data, cap, type)
     # filter out values greater than numCommunities; replace with -1
     filtered_numLabels_data = numLabels_data
     filtered_numLabels_data = np.multiply(filtered_numLabels_data, (filtered_numLabels_data <= numCommunities))
@@ -790,6 +819,122 @@ def plotNumIterationsHeatmap(N, numCommunities, size, numTrials, numIterations_d
 
 
 
+# plotSwitchingHeatmap(N, numCommmunities, numTrials, switching_data)
+"""
+Plots and saves heatmap of average switching
+"""
+def plotSwitchingHeatmap(N, numCommunities, size, numTrials, switching_data, cap, type):
+    print('plotting switching_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(switching_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, switching_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("(%sLPA) Average Switching (cap %d) on SBM where \nN = %d on %d Communities with %d Trials\n(0: no switching, 1: (precise) switching)" % (type, cap, N, numCommunities, numTrials))
+    ax.set_xlabel('a where p = N^(-a/32)')
+    ax.set_ylabel('b where q = N^(-b/32)')
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('switching_heatmap_N%d_%dcomm_%dtrials_%s' % (N, numCommunities, numTrials, type))
+    plt.close()
+
+
+
+# plotCorrectnessHeatmap(N, numCommmunities, numTrials, correctness_data)
+"""
+Plots and saves heatmap of average correctness
+"""
+def plotCorrectnessHeatmap(N, numCommunities, size, numTrials, correctness_data, cap, type):
+    print('plotting switching_heatmap_N%d_%dcomm_%dtrials' %(N, numCommunities, numTrials))
+    b_arr = np.linspace(0, -1, num = size)
+    a_arr = np.linspace(0, -1, num = size)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(correctness_data)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(a_arr)))#, labels=a_arr)
+    ax.set_yticks(np.arange(len(b_arr)))#, labels=b_arr)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+            rotation_mode="anchor")
+    
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(b_arr)):
+        for j in range(len(a_arr)):
+            text = ax.text(i, j, correctness_data[j, i],
+                        fontsize = 4, ha="center", va="center", color="w")
+
+    ax.set_title("(%sLPA) Average Correctness (cap %d) on SBM where \nN = %d on %d Communities with %d Trials\n(0: incorrect communities, 1: correct communities" % (type, cap, N, numCommunities, numTrials))
+    ax.set_xlabel('a where p = N^(-a/32)')
+    ax.set_ylabel('b where q = N^(-b/32)')
+    fig.tight_layout()
+    #plt.show()
+    plt.savefig('correctness_heatmap_N%d_%dcomm_%dtrials_%s' % (N, numCommunities, numTrials, type))
+    plt.close()
+
+
+
+# plotCommMinHeatmap(N, numCommunities, size, numTrials, intraCommMin_data, cap, type)
+"""
+Plots and saves heatmap of the proportion of vertices that are labeled with an intra-community minimum label.
+Note that this will generate cap images, each containing numCommunities heatmaps.
+In each image, the kth heatmap from the left will display the average proportion of vertices that are labeled with the kth smallest label out of the set of all intra-community minimum labels.
+"""
+def plotCommMinHeatmap(N, numCommunities, size, numTrials, intraCommMin_data, cap, type):
+    # Create a custom colormap that interpolates between yellow and purple
+    cmap_custom = mcolors.LinearSegmentedColormap.from_list("Custom", [(1, 1, 0), (0.5, 0, 0.5)])
+    for round in range(cap + 1):
+        fig, axes = plt.subplots(1, numCommunities, figsize=(numCommunities * 10, 10))
+        # Add a centered title above both subplots
+        fig.suptitle('Proportion of Vertices with k-Smallest Intra-Community Label, Round %d of %d\n(%s, N = %d on %d Communities with %d Trials)' % (round, cap, type, N, numCommunities, numTrials), fontsize=16)
+        # plot heatmap for rank-th smallest intra-community minimum label
+        for rank in range(numCommunities):
+            heatmap_data = intraCommMin_data[rank][round]
+            im = axes[rank].imshow(heatmap_data, cmap=cmap_custom, interpolation='nearest', vmin=0, vmax=1)
+            axes[rank].set_title('%d-Smallest Intra-Comm Label' % rank)
+            axes[rank].set_xlabel('a where p = N^(-a/32)')
+            axes[rank].set_ylabel('b where q = N^(-b/32)')
+            plt.colorbar(im, ax=axes[rank], fraction=0.046, pad=0.04)
+
+            for i in range(size):
+                for j in range(size):
+                    t = '%0.2f' % heatmap_data[j, i]
+                    axes[rank].text(i, j, t,
+                        fontsize = 4, ha="center", va="center", color="w")
+                    
+            axes[rank].set_xticks(np.arange(size))
+            axes[rank].set_yticks(np.arange(size))
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        
+        plt.savefig('commMin_round%dof%d_heatmap_N%d_%dcomm_%dtrials_%s' % (round, cap, N, numCommunities, numTrials, type))
+        plt.close()
+
+
+
+
 # labelHistory(N, numCommunities, p, q, numRounds=5)
 """
 Generates bar graph/histogram for labels over numRounds rounds of the LPA
@@ -808,11 +953,18 @@ def labelHistory(N, numCommunities, a, b, numRounds=5):
     inds = np.random.choice(np.arange(N), int(N/numCommunities), replace=False)
     communities[inds] = 1
 
-    # print('communities:')
-    # print(communities)
+    print('community == 0:')
+    print(len(communities[communities == 0]))
+    print('community == 1:')
+    print(len(communities[communities == 1]))
 
     p = N**(a)
     q = N**(b)
+
+    # p = a * np.log(N)/N
+    # q = b * np.log(N)/N
+    # print('p = %f' % p)
+    # print('q = %f' % q)
 
     G = generate_randomized_stochastic_block_model_with_comm(N, numCommunities, p, q, communities)
     history, iteration = MinRandLPA(G, cap=numRounds)
@@ -890,6 +1042,76 @@ def generate_stacked_bar_graphs(N, maxRounds, numRounds, numCommunities, a, b, s
 
     plt.clf()
     plt.close()
+
+
+
+# isSwitching(N, numCommunities, p, q, cap, type, history)
+"""
+Returns a value of 0 (false) or 1 or 2 (true) depending on whether this particular run of the algorithm exhibited switching
+Inputs:
+    [most are the same as always]
+    history = N by k array (k = number of iterations before convergence)
+Outputs: 0 if not switching, 1 if yes switching (precise label)
+"""
+def isSwitching(history):
+    if (history.shape[1] < 3):
+        return 0
+    lastRound = history[:, -1]
+    thirdToLast = history[:, -3]
+    if (np.array_equal(lastRound, thirdToLast)):
+        return 1
+    return 0
+
+
+
+# isCorrect(history, communities)
+"""
+Returns proportion of vertices where last round of history matches the original communities
+"""
+def isCorrect(history, communities):
+    # if np.array_equal(history[:,-1], communities):
+    #     return 1
+    # return 0
+    N = len(communities)
+    count1 = 0
+    count2 = 0
+    for i in range(N):
+        if history[i, -1] == communities[i]: count1 += 1
+        if history[i, -2] == communities[i]: count2 += 1
+    return np.max([count1, count2]) / N
+
+
+
+# commMinConcentrations(history, intraCommMin_sum)
+"""
+Processes history to count the proportion of vertices with the smallest label (ascending order), and updates intraCommMin_sum
+"""
+def commMinConcentrations(N, numTrials, history, iteration, intraCommMin_data, communities, j, i, cap):
+    # first find the smallest labels in each community
+    numCommunities = len(np.unique(communities))
+    smallestLabels = np.zeros(numCommunities)
+    for comm in np.unique(communities):
+        member_indices = np.where(communities == comm)[0]
+        smallestLabels[int(comm)] = member_indices[0]
+    # sort the labels so that they are in ascending order
+    smallestLabels = np.sort(smallestLabels)
+    # for each label that is the smallest in its community, starting from the global minimum...
+    for rank in range(len(smallestLabels)):
+        # copy over block; should be of size cap x size x size
+        block = intraCommMin_data[rank]
+        # ... for each round of the algorithm...
+        for round in range(cap+1):
+            # sometimes history will have fewer iterations than cap allows because it will converge before; if round > last iteration, just keep choosing the last iteration
+            histIndex = min(iteration, round)
+            round_hist = history[:, histIndex]
+            label = smallestLabels[rank]
+            # ...add the proportion of vertices with the label of that rank after that round (averaged over the number of trials)
+            block[round, j, i] += (np.count_nonzero(round_hist==label) / N) / numTrials
+        # copy back block to intraComm data
+        intraCommMin_data[rank] = block
+    # return updated data
+    return intraCommMin_data
+
 
 
 # other functions

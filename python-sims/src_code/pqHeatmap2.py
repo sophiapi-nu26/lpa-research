@@ -6,7 +6,7 @@ size_values = [33]
 trial_values = [4]
 type_values = ['minRand', 'minMin']
 
-N_values = [1000, 2500, 5000]
+N_values = [62]
 community_values = [2]
 
 for N in N_values:
@@ -15,4 +15,4 @@ for N in N_values:
             for trials in trial_values:
                 for type in type_values:
                     print("starting...")
-                    generatePQHeatmap(N, comm, size, trials, type=type)
+                    generatePQHeatmap(N, comm, size, trials, cap=8, type=type)
